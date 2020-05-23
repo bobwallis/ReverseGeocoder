@@ -58,7 +58,7 @@ echo -e "\033[1m\nImport place data...\033[0m"
     # Header
     echo -e "geonameid|name|latitude|longitude|class|code|country|adm1|adm2"
     # Filter only rows with a feature class of P
-    grep -P "^(?:[^\t]*\t){6}P" "./allCountries.txt" | \
+    grep -P "^(?:[^\t]*\t){6}(P|T)" "./allCountries.txt" | \
     # Remove spurious |s
     sed 's/|//g;' | \
     # Extract relevant columns
