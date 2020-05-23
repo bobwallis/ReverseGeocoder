@@ -78,6 +78,7 @@ echo -e "\033[1m\nExporting combined data...\033[0m"
     echo "    longitude DECIMAL(8,3)"
     echo ");"
     echo ""
+    echo "BEGIN TRANSACTION;"
     sqlite3 "$d/geonames.sqlite" <<END_COMMANDS | sed 's/INSERT INTO place VALUES/INSERT INTO place (name, country, latitude, longitude) VALUES/g'
 .mode insert place
 SELECT p.name || (CASE WHEN a2.name IS NULL THEN '' ELSE ', '||a2.name END) || (CASE WHEN a1.name IS NULL THEN '' ELSE ', '||a1.name END),
@@ -88,6 +89,9 @@ SELECT p.name || (CASE WHEN a2.name IS NULL THEN '' ELSE ', '||a2.name END) || (
  LEFT JOIN adm1 a1 on a1.adm1 = p.country||'.'||p.adm1
  LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2;;
 END_COMMANDS
+    echo "COMMIT TRANSACTION;"
+    echo "CREATE INDEX idx_lat ON place (latitude);"
+    echo "CREATE INDEX idx_lon ON place (longitude);"
 } > "$d/data.sql"
 
 rm "$d/geonames.sqlite"
