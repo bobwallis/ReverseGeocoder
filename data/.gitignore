@@ -1,0 +1,5 @@
+*.zip
+*.txt
+*.sqlite
+*.sqlite-journal
+*.sql

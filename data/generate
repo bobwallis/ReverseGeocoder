@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# Get script directory, and cd to it
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+d="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+cd "$d" || { echo "cd fail"; exit 1; }
+
+
+# Download data from GeoNames if we haven't already
+if [[ -f "$d/allCountries.txt" ]]; then
+    echo -e "\033[1m\nallCountries data already downloaded\033[0m" 
+else
+    echo -e "\033[1m\nDownloading allCountries data...\033[0m"
+    curl "https://download.geonames.org/export/dump/allCountries.zip" --output "$d/allCountries.zip"
+    echo -e "\n\033[1mExtracting data\033[0m"
+    unzip -u "$d/allCountries.zip"
+fi
+if [[ -f "$d/admin1CodesASCII.txt" ]]; then
+    echo -e "\033[1m\nAdmin1 codes data already downloaded\033[0m" 
+else
+    echo -e "\033[1m\nDownloading admin1 data...\033[0m"
+    curl "https://download.geonames.org/export/dump/admin1CodesASCII.txt" --output "$d/admin1CodesASCII.txt"
+fi
+if [[ -f "$d/admin2Codes.txt" ]]; then
+    echo -e "\033[1m\nAdmin2 codes data already downloaded\033[0m" 
+else
+    echo -e "\033[1m\nDownloading admin2 data...\033[0m"
+    curl "https://download.geonames.org/export/dump/admin2Codes.txt" --output "$d/admin2Codes.txt"
+fi
+
+
+# Import admin 1 codes
+echo -e "\033[1m\nImport admin1 data...\033[0m"
+{
+    # Header
+    echo -e "adm1|name"
+    # Extract relevant columns
+    cut -f 1,2 --output-delimiter="|" "$d/admin1CodesASCII.txt" | \
+    # Escape "s
+    sed 's/"/""/g;s/[^|]*"[^|]*/"&"/g'
+} | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin adm1"
+
+# Import admin 2 codes
+echo -e "\033[1m\nImport admin2 data...\033[0m"
+{
+    # Header
+    echo -e "adm2|name"
+    # Extract relevant columns
+    cut -f 1,2 --output-delimiter="|" "$d/admin2Codes.txt" | \
+    # Escape "s
+    sed 's/"/""/g;s/[^|]*"[^|]*/"&"/g'
+} | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin adm2"
+
+# Import places
+echo -e "\033[1m\nImport place data...\033[0m"
+{
+    # Header
+    echo -e "geonameid|name|latitude|longitude|class|code|country|adm1|adm2"
+    # Filter only rows with a feature class of P
+    grep -P "^(?:[^\t]*\t){6}P" "./allCountries.txt" | \
+    # Remove spurious |s
+    sed 's/|//g;' | \
+    # Extract relevant columns
+    cut -f 1,2,5,6,7,8,9,11,12  --output-delimiter="|" | \
+    # Escape "s
+    sed 's/"/""/g;s/[^|]*"[^|]*/"&"/g'
+} | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin place"
+
+# Export data
+echo -e "\033[1m\nExporting combined data...\033[0m"
+{
+    echo "CREATE TABLE place ("
+    echo "    id INTEGER AUTO_INCREMENT PRIMARY KEY,"
+    echo "    name TEXT,"
+    echo "    country CHAR(2),"
+    echo "    latitude DECIMAL(8,3),"
+    echo "    longitude DECIMAL(8,3)"
+    echo ");"
+    echo ""
+    sqlite3 "$d/geonames.sqlite" <<END_COMMANDS | sed 's/INSERT INTO place VALUES/INSERT INTO place (name, country, latitude, longitude) VALUES/g'
+.mode insert place
+SELECT p.name || (CASE WHEN a2.name IS NULL THEN '' ELSE ', '||a2.name END) || (CASE WHEN a1.name IS NULL THEN '' ELSE ', '||a1.name END),
+       p.country,
+       CAST(p.latitude AS DECIMAL(8,3)),
+       CAST(p.longitude AS DECIMAL(3,3))
+ FROM place p
+ LEFT JOIN adm1 a1 on a1.adm1 = p.country||'.'||p.adm1
+ LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2;;
+END_COMMANDS
+} > "$d/data.sql"
+
+rm "$d/geonames.sqlite"
