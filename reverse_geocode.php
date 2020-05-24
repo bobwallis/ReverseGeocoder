@@ -35,8 +35,7 @@ $bbox_min_lat = $lat - ($bbx_size_km / 111.045);
 $bbox_max_lat = $lat + ($bbx_size_km / 111.045);
 $bbox_min_lon = $lon - ($bbx_size_km / (111.045 * cos(deg2rad($lat))));
 $bbox_max_lon = $lon + ($bbx_size_km / (111.045 * cos(deg2rad($lat))));
-if( $bbox_min_lat < -90 )  $bbox_min_lat = ($bbox_min_lat + 180)*-1;
-if( $bbox_max_lat >  90 )  $bbox_max_lat = ($bbox_max_lat - 180)*-1;
+// Fix overflows beyond +-180 longitude
 if( $bbox_min_lon < -180 ) $bbox_min_lon = ($bbox_min_lon + 360);
 if( $bbox_max_lon >  180 ) $bbox_max_lon = ($bbox_max_lon - 360);
 
@@ -50,9 +49,10 @@ try {
                 p.longitude 
             FROM place p
             WHERE
-                p.latitude > :bbox_min_lat AND p.latitude < :bbox_max_lat
+                ( p.latitude > :bbox_min_lat AND p.latitude < :bbox_max_lat )
                 AND
-                p.longitude > :bbox_min_lon AND p.longitude < :bbox_max_lon;';
+                (p.longitude > :bbox_min_lon '.($bbox_min_lon < $bbox_max_lon? 'AND' : 'OR').' p.longitude < :bbox_max_lon)
+                ;';
     $sth = $pdo->prepare( $sql );
     $sth->execute( compact( 'bbox_min_lat', 'bbox_max_lat', 'bbox_min_lon', 'bbox_max_lon' ) );
     $result = $sth->fetchAll( PDO::FETCH_ASSOC );
