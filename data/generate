@@ -77,7 +77,8 @@ echo -e "\033[1m\nExporting combined data...\033[0m"
     echo "    latitude DECIMAL(8,3),"
     echo "    longitude DECIMAL(8,3)"
     echo ");"
-    echo ""
+} > "$d/schema.sql"
+{
     echo "BEGIN TRANSACTION;"
     sqlite3 "$d/geonames.sqlite" <<END_COMMANDS | sed 's/INSERT INTO place VALUES/INSERT INTO place (name, country, latitude, longitude) VALUES/g'
 .mode insert place

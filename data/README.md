@@ -10,6 +10,8 @@ lookup code.
 
 * Run `./generate`.
 
-* Receive `./data.sql`.
+* Receive `./schema.sql` and `./data.sql`.
 
-* Import into your database of choice.
+* Import into your database of choice. If you are using Postgres then you'll need
+  to edit `./schema.sql` by removing "INTEGER AUTO_INCREMENT" and replacing it
+  with "SERIAL". `./data.sql` does nothing complex and so should work in any DB.
