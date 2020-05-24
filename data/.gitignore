@@ -4,3 +4,4 @@
 *.sqlite-journal
 *.sql
 *.sql.gz
+*.csv
