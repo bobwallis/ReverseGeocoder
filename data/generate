@@ -70,25 +70,17 @@ echo -e "\033[1m\nImport place data...\033[0m"
 # Export data
 echo -e "\033[1m\nExporting combined data...\033[0m"
 {
-    echo "CREATE TABLE place ("
-    echo "    id INTEGER AUTO_INCREMENT PRIMARY KEY,"
-    echo "    name TEXT,"
-    echo "    country CHAR(2),"
-    echo "    latitude DECIMAL(8,3),"
-    echo "    longitude DECIMAL(8,3)"
-    echo ");"
-} > "$d/schema.sql"
-{
     sqlite3 "$d/geonames.sqlite" <<END_COMMANDS 
 .headers on
 .mode csv
-SELECT p.name || (CASE WHEN a2.name IS NULL THEN '' ELSE ', '||a2.name END) || (CASE WHEN a1.name IS NULL THEN '' ELSE ', '||a1.name END) AS name,
+SELECT p.geonameid AS id,
+       p.name || (CASE WHEN a2.name IS NULL THEN '' ELSE ', '||a2.name END) || (CASE WHEN a1.name IS NULL THEN '' ELSE ', '||a1.name END) AS name,
        p.country AS country,
        ROUND(p.latitude,5) AS latitude,
        ROUND(p.longitude,5) AS longitude
  FROM place p
  LEFT JOIN adm1 a1 on a1.adm1 = p.country||'.'||p.adm1
- LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2;;
+ LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2;
 END_COMMANDS
 } > "$d/data.csv"
 

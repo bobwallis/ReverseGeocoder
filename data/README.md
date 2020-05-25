@@ -10,13 +10,7 @@ lookup code.
 
 * Run `./generate`.
 
-* Receive `./schema.sql` and `./data.csv`.
+* Receive `./data.csv`.
 
-* Create the table in your database of choice, using `./schema.sql` if you want.
-  If you are using Postgres then you'll need to edit `./schema.sql` by removing 
-  "INTEGER AUTO_INCREMENT" and replacing it with "SERIAL".
-
-* Import `./data.csv` using your database's CSV import mode.
-
-* Create indexes on the longitude and latitude columns to improve performance
-  significantly.
+* Import the data into your database of choice, using one of the 
+  `./import-*.sql` files if you want, or manually if you prefer.
