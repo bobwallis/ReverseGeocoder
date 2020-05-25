@@ -29,7 +29,7 @@ try {
 }
 
 
-// Get a 10km bounding box
+// Get a 5km bounding box
 $bbx_size_km  = 5;
 $bbox_min_lat = $lat - ($bbx_size_km / 111.045);
 $bbox_max_lat = $lat + ($bbx_size_km / 111.045);
