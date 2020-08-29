@@ -9,7 +9,7 @@ cd "$d" || { echo "cd fail"; exit 1; }
 
 # Download data from GeoNames if we haven't already
 if [[ -f "$d/allCountries.txt" ]]; then
-    echo -e "\033[1m\nallCountries data already downloaded\033[0m" 
+    echo -e "\033[1m\nallCountries data already downloaded\033[0m"
 else
     echo -e "\033[1m\nDownloading allCountries data...\033[0m"
     curl "https://download.geonames.org/export/dump/allCountries.zip" --output "$d/allCountries.zip"
@@ -17,13 +17,13 @@ else
     unzip -u "$d/allCountries.zip"
 fi
 if [[ -f "$d/admin1CodesASCII.txt" ]]; then
-    echo -e "\033[1m\nAdmin1 codes data already downloaded\033[0m" 
+    echo -e "\033[1m\nAdmin1 codes data already downloaded\033[0m"
 else
     echo -e "\033[1m\nDownloading admin1 data...\033[0m"
     curl "https://download.geonames.org/export/dump/admin1CodesASCII.txt" --output "$d/admin1CodesASCII.txt"
 fi
 if [[ -f "$d/admin2Codes.txt" ]]; then
-    echo -e "\033[1m\nAdmin2 codes data already downloaded\033[0m" 
+    echo -e "\033[1m\nAdmin2 codes data already downloaded\033[0m"
 else
     echo -e "\033[1m\nDownloading admin2 data...\033[0m"
     curl "https://download.geonames.org/export/dump/admin2Codes.txt" --output "$d/admin2Codes.txt"
@@ -57,7 +57,7 @@ echo -e "\033[1m\nImport place data...\033[0m"
 {
     # Header
     echo -e "geonameid|name|latitude|longitude|class|code|country|adm1|adm2"
-    # Filter only rows with a feature class of P
+    # Filter only rows with a feature class of P and T
     grep -P "^(?:[^\t]*\t){6}(P|T)" "./allCountries.txt" | \
     # Remove spurious |s
     sed 's/|//g;' | \
@@ -70,7 +70,7 @@ echo -e "\033[1m\nImport place data...\033[0m"
 # Export data
 echo -e "\033[1m\nExporting combined data...\033[0m"
 {
-    sqlite3 "$d/geonames.sqlite" <<END_COMMANDS 
+    sqlite3 "$d/geonames.sqlite" <<END_COMMANDS
 .headers on
 .mode csv
 SELECT p.geonameid AS id,
