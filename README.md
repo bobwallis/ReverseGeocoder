@@ -40,5 +40,5 @@ script can connect to the data you just created.
 Upload to your PHP server of choice, and access like this:
 `https://example.com/reverse_geocode.php?lat=51.7546&lon=-1.2588`
 
-Porting to other languages, or you favourite serverless architecture, is an
+Porting to other languages, or your favourite serverless architecture, is an
 exercise for the reader.

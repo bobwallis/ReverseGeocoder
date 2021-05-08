@@ -30,8 +30,9 @@ else
 fi
 
 
-# Import admin 1 codes
+# Import admin 1 codes into a temporary SQLite database
 echo -e "\033[1m\nImport admin1 data...\033[0m"
+# Generate an import file from the downloaded data
 {
     # Header
     echo -e "adm1|name"
@@ -39,10 +40,12 @@ echo -e "\033[1m\nImport admin1 data...\033[0m"
     cut -f 1,2 --output-delimiter="|" "$d/admin1CodesASCII.txt" | \
     # Escape "s
     sed 's/"/""/g;s/[^|]*"[^|]*/"&"/g'
+# Then import it
 } | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin adm1"
 
 # Import admin 2 codes
 echo -e "\033[1m\nImport admin2 data...\033[0m"
+# Generate an import file from the downloaded data
 {
     # Header
     echo -e "adm2|name"
@@ -50,10 +53,12 @@ echo -e "\033[1m\nImport admin2 data...\033[0m"
     cut -f 1,2 --output-delimiter="|" "$d/admin2Codes.txt" | \
     # Escape "s
     sed 's/"/""/g;s/[^|]*"[^|]*/"&"/g'
+# Then import it
 } | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin adm2"
 
 # Import places
 echo -e "\033[1m\nImport place data...\033[0m"
+# Generate an import file from the downloaded data
 {
     # Header
     echo -e "geonameid|name|latitude|longitude|class|code|country|adm1|adm2"
@@ -65,9 +70,10 @@ echo -e "\033[1m\nImport place data...\033[0m"
     cut -f 1,2,5,6,7,8,9,11,12  --output-delimiter="|" | \
     # Escape "s
     sed 's/"/""/g;s/[^|]*"[^|]*/"&"/g'
+# Then import it
 } | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin place"
 
-# Export data
+# Export data from the temporary SQLite table into a CSV file
 echo -e "\033[1m\nExporting combined data...\033[0m"
 {
     sqlite3 "$d/geonames.sqlite" <<END_COMMANDS
@@ -84,4 +90,5 @@ SELECT p.geonameid AS id,
 END_COMMANDS
 } > "$d/data.csv"
 
+# Delete the temporary database
 rm "$d/geonames.sqlite"
