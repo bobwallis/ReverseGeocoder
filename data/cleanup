@@ -1,0 +1,10 @@
+#!/bin/bash
+
+# Get script directory, and cd to it
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
+d="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+cd "$d" || { echo "cd fail"; exit 1; }
+
+# Remove files used during generation of database
+rm "$d/admin1CodesASCII.txt" "$d/admin2Codes.txt" "$d/allCountries.txt" "$d/allCountries.zip" "$d/geonames.sqlite" "$d/data.csv"

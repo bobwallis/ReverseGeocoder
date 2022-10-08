@@ -10,8 +10,13 @@ lookup code.
 
 * Run `./generate`.
 
-* Receive `./data.csv`.
+* Receive the output: `./data.csv`.
 
 * Import the data into your database of choice, using one of the
   `./import-*.sql` files if you want (instructions are inside), or manually
-  if you prefer.
+  if you prefer. e.g. running `sqlite3 data.sqlite < import-sqlite.sql` will
+  create you a file called `./data.sqlite` that contains the database.
+
+* Run `./cleanup` to delete all the cached files used to generate the
+  database. You should do this if you want to redownload the latest data, for
+  example.

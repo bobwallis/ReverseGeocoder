@@ -31,7 +31,8 @@ fi
 
 
 # Import admin 1 codes into a temporary SQLite database
-echo -e "\033[1m\nImport admin1 data...\033[0m"
+rm -f "$d/geonames.sqlite"
+echo -e "\033[1m\nImporting admin1 data...\033[0m"
 # Generate an import file from the downloaded data
 {
     # Header
@@ -44,7 +45,7 @@ echo -e "\033[1m\nImport admin1 data...\033[0m"
 } | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin adm1"
 
 # Import admin 2 codes
-echo -e "\033[1m\nImport admin2 data...\033[0m"
+echo -e "\033[1m\nImporting admin2 data...\033[0m"
 # Generate an import file from the downloaded data
 {
     # Header
@@ -57,7 +58,7 @@ echo -e "\033[1m\nImport admin2 data...\033[0m"
 } | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin adm2"
 
 # Import places
-echo -e "\033[1m\nImport place data...\033[0m"
+echo -e "\033[1m\nImporting place data...\033[0m"
 # Generate an import file from the downloaded data
 {
     # Header
@@ -89,6 +90,3 @@ SELECT p.geonameid AS id,
  LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2;
 END_COMMANDS
 } > "$d/data.csv"
-
-# Delete the temporary database
-rm "$d/geonames.sqlite"
