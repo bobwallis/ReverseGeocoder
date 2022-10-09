@@ -1,0 +1,10 @@
+{
+  "type": "module",
+  "devDependencies": {
+    "serverless-s3-sync": "^3.1.0"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.186.0",
+    "better-sqlite3": "^7.6.2"
+  }
+}

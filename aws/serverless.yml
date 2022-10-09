@@ -1,0 +1,51 @@
+service: reverse-geocode
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  deploymentMethod: direct
+  runtime: nodejs16.x
+  memorySize: 2048
+  timeout: 20
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action: 's3:ListBucket'
+          Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref DataBucket ] ]
+        - Effect: Allow
+          Action: 's3:GetObject'
+          Resource: !Join [ '', [ 'arn:aws:s3:::', !Ref DataBucket, '/*' ] ]
+
+resources:
+  Resources:
+    DataBucket:
+      Type: AWS::S3::Bucket
+  Outputs:
+    DataBucketNameOutputKey:
+      Value: !Ref DataBucket
+
+functions:
+  reverse-geocode:
+    handler: handler.reverseGeocode
+    ephemeralStorageSize: 1024
+    environment:
+      BUCKET_NAME: !Ref DataBucket
+    events:
+      - httpApi:
+          path: /reverse_geocode
+          method: get
+
+package:
+  patterns:
+    - handler.js
+    - '!data/**'
+
+plugins:
+  - serverless-s3-sync
+
+custom:
+  s3Sync:
+    - bucketNameKey: DataBucketNameOutputKey
+      localDir: data

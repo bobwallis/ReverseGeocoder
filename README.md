@@ -47,11 +47,26 @@ you just created.
 Upload to your PHP server of choice, and access like this:
 `https://example.com/reverse_geocode.php?lat=51.7546&lon=-1.2588`
 
+### Serverless / Amazon Web Services
+The folder `./aws` contains configuration and code to use with Serverless
+to run the project on AWS as a Lambda function. Since Lambdas have a size
+limit of 256MB, the database is stored on S3 and read in on first launch.
+
+Create an SQLite database using the data and copy it to `./aws/data/data.sqlite`.
+
+[Set up Serverless][5], `cd` into `./aws`, and then run `serverless deploy`.
+You should get some output in your terminal that includes an endpoint URL.
+Once you have tested, use `serverless deploy --stage prod`.
+
+The first call to the endpoint will take around 7.5 seconds due to the cold
+start. Subsequent requests will be well sub 100ms, until the Lambda is left
+idle long enough that AWS times it out.
+
 ### Other
-Porting to other languages, or your favourite serverless architecture, is an
-exercise for the reader.
+Porting to other languages is an exercise for the reader.
 
 [1]: https://developer.mozilla.org/en-US/docs/Web/API/Geolocation_API
 [2]: https://isitgoingtorain.com
 [3]: https://creativecommons.org/licenses/by/4.0/
 [4]: http://www.geonames.org/export/
+[5]: https://www.serverless.com/framework/docs/getting-started
