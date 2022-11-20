@@ -28,7 +28,7 @@ resources:
 
 functions:
   reverse-geocode:
-    handler: handler.reverseGeocode
+    handler: handler.reverse_geocode
     ephemeralStorageSize: 1024
     environment:
       BUCKET_NAME: !Ref DataBucket

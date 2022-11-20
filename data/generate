@@ -6,8 +6,12 @@ while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
 d="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 cd "$d" || { echo "cd fail"; exit 1; }
 
+# Read .env
+set -a
+source <(cat "$d/.env" | sed -e '/^#/d;/^\s*$/d' -e "s/'/'\\\''/g" -e "s/=\(.*\)/='\1'/g")
+set +a
 
-# Download data from GeoNames if we haven't already
+# Download data from GeoNames and Maxmind/GeoLite2 if we haven't already
 if [[ -f "$d/allCountries.txt" ]]; then
     echo -e "\033[1m\nallCountries data already downloaded\033[0m"
 else
@@ -28,6 +32,57 @@ else
     echo -e "\033[1m\nDownloading admin2 data...\033[0m"
     curl "https://download.geonames.org/export/dump/admin2Codes.txt" --output "$d/admin2Codes.txt"
 fi
+if [[ -f "$d/GeoLite2-Country-CSV.zip" ]]; then
+    echo -e "\033[1m\nGeoLite2-Country data already downloaded\033[0m"
+else
+    echo -e "\033[1m\nDownloading GeoLite2-Country data...\033[0m"
+    curl "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=$GEOLITE2_LICENSE_KEY&suffix=zip" --output "$d/GeoLite2-Country-CSV.zip"
+    echo -e "\n\033[1mExtracting data\033[0m"
+    unzip -ju "$d/GeoLite2-Country-CSV" "*/GeoLite2-Country-Blocks-IPv4.csv" "*/GeoLite2-Country-Blocks-IPv6.csv" "*/GeoLite2-Country-Locations-en.csv"
+fi
+
+
+# Import IP location data into a temprary SQLite database
+rm -f "$d/geolite2.sqlite"
+echo -e "\033[1m\nImporting IP address location data...\033[0m"
+# Generate an import file from the downloaded data
+{
+    # Header
+    echo -e "network_start|network_end|geoname_id"
+    # Ignore the header row in the file
+    tail -n +2 "$d/GeoLite2-Country-Blocks-IPv4.csv" | \
+    # Convert CIDR into start and end IPs, add the geoname_id to the end
+    cut -f 1,2 --delimiter="," --output-delimiter="," | \
+    awk -F'[./,]' -v RS='[\n]' '{printf "%d%s%d%s%d%s", (($1*256+$2)*256+$3)*256+$4 + 1, "|", (($1*256+$2)*256+$3)*256+$4 + 2^(32-$5)-2, "|", $6, RT}'
+# Then import it
+} | sqlite3 -csv  -separator "|" "$d/geolite2.sqlite" ".import /dev/stdin ips"
+
+# Import country codes
+echo -e "\033[1m\nImporting country codes...\033[0m"
+# Generate an import file from the downloaded data
+{
+    # Header
+    echo -e "geoname_id|country_iso_code"
+    # Ignore the header row in the file
+    tail -n +2 "$d/GeoLite2-Country-Locations-en.csv" | \
+    # Extract relevant columns
+    cut -f 1,5 --delimiter="," --output-delimiter="|"
+# Then import it
+} | sqlite3 -csv  -separator "|" "$d/geolite2.sqlite" ".import /dev/stdin locations"
+
+# Export data from the temporary SQLite table into a CSV file
+echo -e "\033[1m\nExporting combined data...\033[0m"
+{
+    sqlite3 "$d/geolite2.sqlite" <<END_COMMANDS
+.headers on
+.mode csv
+SELECT i.network_start AS network_start,
+       i.network_end AS network_end,
+       l.country_iso_code AS country
+ FROM ips i
+ LEFT JOIN locations l on i.geoname_id = l.geoname_id;
+END_COMMANDS
+} > "$d/ip.csv"
 
 
 # Import admin 1 codes into a temporary SQLite database
@@ -62,31 +117,50 @@ echo -e "\033[1m\nImporting place data...\033[0m"
 # Generate an import file from the downloaded data
 {
     # Header
-    echo -e "geonameid|name|latitude|longitude|class|code|country|adm1|adm2"
+    echo -e "geonameid|name|latitude|longitude|class|code|country|adm1|adm2|population"
     # Filter only rows with a feature class of P and T
     grep -P "^(?:[^\t]*\t){6}(P|T)" "./allCountries.txt" | \
     # Remove spurious |s
     sed 's/|//g;' | \
     # Extract relevant columns
-    cut -f 1,2,5,6,7,8,9,11,12  --output-delimiter="|" | \
+    cut -f 1,2,5,6,7,8,9,11,12,15  --output-delimiter="|" | \
     # Escape "s
     sed 's/"/""/g;s/[^|]*"[^|]*/"&"/g'
 # Then import it
 } | sqlite3 -csv  -separator "|" "$d/geonames.sqlite" ".import /dev/stdin place"
 
-# Export data from the temporary SQLite table into a CSV file
-echo -e "\033[1m\nExporting combined data...\033[0m"
+# Export admin data from the temporary SQLite table into a CSV file
+echo -e "\033[1m\nExporting admin data...\033[0m"
+{
+    sqlite3 "$d/geonames.sqlite" <<END_COMMANDS
+CREATE TABLE admin AS
+  SELECT DISTINCT (CASE WHEN a2.name IS NULL THEN '' ELSE a2.name END) || (CASE WHEN a2.name IS NOT NULL AND a1.name IS NOT NULL THEN ', ' ELSE '' END) || (CASE WHEN a1.name IS NULL THEN '' ELSE a1.name END) AS name
+   FROM place p
+     LEFT JOIN adm1 a1 on a1.adm1 = p.country||'.'||p.adm1
+     LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2;
+.headers on
+.mode csv
+SELECT a.rowid AS id,
+       a.name AS name
+ FROM admin a;
+END_COMMANDS
+} > "$d/admin.csv"
+
+# Export place data from the temporary SQLite table into a CSV file
+echo -e "\033[1m\nExporting place data...\033[0m"
 {
     sqlite3 "$d/geonames.sqlite" <<END_COMMANDS
 .headers on
 .mode csv
-SELECT p.geonameid AS id,
-       p.name || (CASE WHEN a2.name IS NULL THEN '' ELSE ', '||a2.name END) || (CASE WHEN a1.name IS NULL THEN '' ELSE ', '||a1.name END) AS name,
+SELECT p.name AS name,
+       a.rowid AS admin,
        p.country AS country,
+       p.population AS sort,
        ROUND(p.latitude,5) AS latitude,
        ROUND(p.longitude,5) AS longitude
  FROM place p
- LEFT JOIN adm1 a1 on a1.adm1 = p.country||'.'||p.adm1
- LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2;
+  LEFT JOIN adm1 a1 on a1.adm1 = p.country||'.'||p.adm1
+  LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2
+  LEFT JOIN admin a on a.name = (CASE WHEN a2.name IS NULL THEN '' ELSE a2.name END) || (CASE WHEN a2.name IS NOT NULL AND a1.name IS NOT NULL THEN ', ' ELSE '' END) || (CASE WHEN a1.name IS NULL THEN '' ELSE a1.name END);
 END_COMMANDS
-} > "$d/data.csv"
+} > "$d/place.csv"

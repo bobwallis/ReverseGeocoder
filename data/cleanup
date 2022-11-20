@@ -7,4 +7,15 @@ d="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 cd "$d" || { echo "cd fail"; exit 1; }
 
 # Remove files used during generation of database
-rm "$d/admin1CodesASCII.txt" "$d/admin2Codes.txt" "$d/allCountries.txt" "$d/allCountries.zip" "$d/geonames.sqlite" "$d/data.csv"
+rm -f "$d/admin1CodesASCII.txt" \
+      "$d/admin2Codes.txt" \
+      "$d/allCountries.txt" \
+      "$d/allCountries.zip" \
+      "$d/geonames.sqlite" \
+      "$d/GeoLite2-Country-Blocks-IPv4.csv" \
+      "$d/GeoLite2-Country-Blocks-IPv6.csv" \
+      "$d/GeoLite2-Country-Locations-en.csv" \
+      "$d/GeoLite2-Country-CSV.zip" \
+      "$d/geolite2.sqlite" \
+      "$d/place.csv" \
+      "$d/ip.csv"

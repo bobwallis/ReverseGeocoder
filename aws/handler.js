@@ -9,8 +9,8 @@ let stream   = item.Body.pipe( createWriteStream( '/tmp/data.sqlite' ) );
 await new Promise( ( resolve, reject ) => { stream.on( 'finish', () => { resolve(); } ).on( 'error', err => { console.log(err); reject( err ); } ); } );
 const db = new Database( '/tmp/data.sqlite', { readonly: true } );
 
-// Geocode function
-const reverseGeocode = async ( event ) => {
+// Reverse geocode function
+const reverse_geocode = async ( event ) => {
   // Read and validate parameters
   const params = event.queryStringParameters || { lat: 51.7546, lon: -1.2588  };
   const lat = parseFloat( params.lat );
@@ -33,11 +33,12 @@ const reverseGeocode = async ( event ) => {
   // Get the points inside the bounding box from the database
   let sql = db.prepare(
     `SELECT
-      p.name,
-      p.country,
-      p.latitude,
-      p.longitude
-    FROM place p
+      p.name AS name,
+      a.name AS admin,
+      p.country AS country,
+      p.latitude AS latitude,
+      p.longitude AS longitude
+    FROM place p LEFT JOIN admin a ON a.id = p.admin
     WHERE
       ( p.latitude > :bbox_min_lat AND p.latitude < :bbox_max_lat )
       AND
@@ -54,15 +55,24 @@ const reverseGeocode = async ( event ) => {
 
   // Remove fields that we won't show in the output
   delete closest.distance;
-  delete closest.latitude;
-  delete closest.longitude;
 
   // Output
   return {
     statusCode: 200,
-    headers: { 'content-type': 'application/javascript', 'cache-control': 'public,max-age=604800' },
+    headers: { 'content-type': 'application/javascript', 'cache-control': 'public,max-age=10540800' },
     body: JSON.stringify( closest )
   };
 };
 
-export  { reverseGeocode };
+// Geocode function
+const geocode = async ( event ) => {
+  // TODO
+};
+
+
+// Reverse geocode function
+const ip2country = async ( event ) => {
+  // TODO
+};
+
+export  { reverse_geocode, geocode, ip2country };

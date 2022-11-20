@@ -44,11 +44,12 @@ if( $bbox_max_lon >  180 ) $bbox_max_lon = ($bbox_max_lon - 360);
 // Get the points inside the bounding box from the database
 try {
     $sql = 'SELECT
-                p.name,
-                p.country,
-                p.latitude,
-                p.longitude
-            FROM place p
+                p.name AS name,
+                a.name AS admin,
+                p.country AS country,
+                p.latitude AS latitude,
+                p.longitude AS longitude
+            FROM place p LEFT JOIN admin a ON a.id = p.admin
             WHERE
                 ( p.latitude > :bbox_min_lat AND p.latitude < :bbox_max_lat )
                 AND
@@ -73,12 +74,10 @@ $closest = array_reduce( $result, function( $carry, $item ) use ($lat, $lon) {
 }, array( 'name' => $lat.', '.$lon, 'distance' => 999 ) ); // The default if there's nothing interesting nearby is to just show the lat/lon pair as text
 // Remove fields that we won't show in the output
 unset( $closest['distance'] );
-unset( $closest['latitude'] );
-unset( $closest['longitude'] );
 
 
 // Output
 header( 'Content-Type: application/javascript' );
-header( 'Cache-Control: public,max-age=604800' );
+header( 'Cache-Control: public,max-age=10540800' );
 http_response_code( 200 );
 echo json_encode( $closest );
