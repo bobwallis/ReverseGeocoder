@@ -27,14 +27,20 @@ resources:
       Value: !Ref DataBucket
 
 functions:
-  reverse-geocode:
-    handler: handler.reverse_geocode
+  geocode:
+    handler: handler.geocode
     ephemeralStorageSize: 1024
     environment:
       BUCKET_NAME: !Ref DataBucket
     events:
       - httpApi:
           path: /reverse_geocode
+          method: get
+      - httpApi:
+          path: /geocode
+          method: get
+      - httpApi:
+          path: /ip2country
           method: get
 
 package:
