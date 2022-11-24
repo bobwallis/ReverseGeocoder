@@ -11,7 +11,8 @@ if( !isset( $_GET['q'] ) ) {
     die();
 }
 $q = urldecode( $_GET['q'] );
-$qLike = '%'.$q.'%';
+$qLike1 = $q.'%';
+$qLike2 = '%'.$q.'%';
 if( isset( $_GET['prefer_country'] ) ) {
     if( preg_match( '/[a-zA-Z]{2}/', $_GET['prefer_country'] ) !== 1 ) {
         http_response_code( 400 );
@@ -35,7 +36,7 @@ try {
 
 // Search for points
 try {
-    $sql = 'SELECT
+    $sql = 'SELECT * FROM (SELECT
                 p.name AS name,
                 a.name AS admin,
                 p.country AS country,
@@ -43,12 +44,25 @@ try {
                 p.longitude AS longitude
             FROM place p LEFT JOIN admin a ON a.id = p.admin
             WHERE
-                p.name LIKE :qLike
+                p.name LIKE :qLike1
                 '.(($prefer_country === false)? '' : 'AND p.country = :prefer_country' ).'
             ORDER BY p.sort DESC
-            LIMIT 10;';
+            LIMIT 10)
+            UNION ALL
+            SELECT * FROM (SELECT
+                p.name AS name,
+                a.name AS admin,
+                p.country AS country,
+                p.latitude AS latitude,
+                p.longitude AS longitude
+            FROM place p LEFT JOIN admin a ON a.id = p.admin
+            WHERE
+                p.name LIKE :qLike2
+                '.(($prefer_country === false)? '' : 'AND p.country = :prefer_country' ).'
+            ORDER BY p.sort DESC
+            LIMIT 10);';
     $sth = $pdo->prepare( $sql );
-    ($prefer_country === false)? $sth->execute( compact( 'qLike' ) ) : $sth->execute( compact( 'qLike', 'prefer_country' ) );
+    ($prefer_country === false)? $sth->execute( compact( 'qLike1', 'qLike2' ) ) : $sth->execute( compact( 'qLike1', 'qLike2', 'prefer_country' ) );
     $result = $sth->fetchAll( PDO::FETCH_ASSOC );
 } catch (PDOException $e) {
     http_response_code( 500 );
@@ -63,4 +77,4 @@ try {
 header( 'Content-Type: application/javascript' );
 header( 'Cache-Control: public,max-age=10540800' );
 http_response_code( 200 );
-echo json_encode( $result );
+echo json_encode( array_slice( array_unique( $result ), 0, 10 ) );
