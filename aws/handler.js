@@ -9,9 +9,9 @@ let stream   = item.Body.pipe( createWriteStream( '/tmp/data.sqlite' ) );
 await new Promise( ( resolve, reject ) => { stream.on( 'finish', () => { resolve(); } ).on( 'error', err => { console.log(err); reject( err ); } ); } );
 const db = new Database( '/tmp/data.sqlite', { readonly: true } );
 
-// Reverse geocode function
+// Handler function
 const geocode = async ( event ) => {
-  var params, sql, result;
+  var sql, result;
 
   switch( event.rawPath ) {
 
