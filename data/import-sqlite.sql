@@ -19,8 +19,7 @@ CREATE TABLE place (
     longitude REAL
 );
 .import --csv --skip 1 place.csv place
-CREATE INDEX idx_lat ON place(latitude);
-CREATE INDEX idx_lon ON place(longitude);
+CREATE INDEX idx_latlon ON place(latitude,longitude);
 CREATE INDEX idx_country ON place(country);
 CREATE INDEX idx_sort ON place(sort);
 
@@ -31,7 +30,6 @@ CREATE TABLE ip (
     country TEXT
 );
 .import --csv --skip 1 ip.csv ip
-CREATE INDEX idx_netstart ON ip(network_start);
-CREATE INDEX idx_netend ON ip(network_end);
+CREATE INDEX idx_network ON ip(network_start,network_end);
 
 VACUUM;

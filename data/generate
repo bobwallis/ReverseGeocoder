@@ -156,8 +156,8 @@ SELECT p.name AS name,
        a.rowid AS admin,
        p.country AS country,
        p.population AS sort,
-       ROUND(p.latitude,5) AS latitude,
-       ROUND(p.longitude,5) AS longitude
+       ROUND(p.latitude,3) AS latitude,
+       ROUND(p.longitude,3) AS longitude
  FROM place p
   LEFT JOIN adm1 a1 on a1.adm1 = p.country||'.'||p.adm1
   LEFT JOIN adm2 a2 on a2.adm2 = p.country||'.'||p.adm1||'.'||p.adm2

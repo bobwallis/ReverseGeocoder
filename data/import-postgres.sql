@@ -22,8 +22,7 @@ CREATE TABLE place (
     longitude DECIMAL(8,3)
 );
 COPY place (name, admin, country, sort, latitude, longitude) FROM '/tmp/place.csv' DELIMITERS ',' CSV HEADER;
-CREATE INDEX idx_lat ON place(latitude);
-CREATE INDEX idx_lon ON place(longitude);
+CREATE INDEX idx_latlon ON place(latitude,longitude);
 CREATE INDEX idx_country ON place(country);
 CREATE INDEX idx_sort ON place(sort);
 
@@ -34,5 +33,4 @@ CREATE TABLE ip (
     country CHAR(2)
 );
 COPY ip (network_start, network_end, country) FROM '/tmp/ip.csv' DELIMITERS ',' CSV HEADER;
-CREATE INDEX idx_netstart ON ip(network_start);
-CREATE INDEX idx_netend ON ip(network_end);
+CREATE INDEX idx_netstart ON ip(network_start,network_end);
