@@ -1,7 +1,7 @@
 # Geocoding Tools
 
 This contains a few simple geolocation-related tools designed for self-
-hosting that operate at village-level detail. (i.e. not suitable for
+hosting that operates at village-level detail. (i.e. not suitable for
 identifying specific addresses / buildings).
 
 There is:
@@ -30,19 +30,18 @@ following columns:
 ### `place` table
 | Column    | Data Type    | Description                                |
 |-----------|--------------|--------------------------------------------|
-| id        | integer      | ID column                                  |
 | country   | char(2)      | ISO-3166 2-letter country code             |
 | name      | text         | Name of the point                          |
 | admin     | integer      | ID of the administrative area of the point |
 | sort      | integer      | Bigger = higher priority when searching    |
-| latitude  | decimal(8,3) | Latitude in decimal degrees (WGS84)        |
-| longitude | decimal(8,3) | Longitude in decimal degrees (WGS84)       |
+| latitude  | decimal(6,3) | Latitude in decimal degrees (WGS84)        |
+| longitude | decimal(6,3) | Longitude in decimal degrees (WGS84)       |
 
 ### `admin` table
 | Column    | Data Type    | Description                                |
 |-----------|--------------|--------------------------------------------|
 | id        | integer      | ID column                                  |
-| name      | text         | Name of the point                          |
+| name      | text         | Name of the administrative area            |
 
 You can get these from any source you like. In the `./data` folder there are
 scripts that help with creating such tables using [cc-by licenced][3] data
@@ -65,9 +64,9 @@ scripts that help with creating such a table using [GeoLite2 by Maxmind][6].
 ## How to Use
 
 ### Create database
-Look in the `./data` folder follow the instructions there, or create your own
-database of locations. Upload to your database server, or copy out and upload
-the SQLite file.
+Look in the `./data` folder and follow the instructions there, or create your
+own database of locations. Upload to your database server, or copy out and
+upload an SQLite file.
 
 ### PHP
 The folder `./php` contains 3 scripts. Open them up and edit the Data Source
@@ -82,15 +81,16 @@ Upload to your PHP server of choice, and access like this:
 ### Serverless / Amazon Web Services
 The folder `./aws` contains configuration and code to use with Serverless to
 run the project on AWS as a Lambda function. Since Lambdas have a size limit
-of 256MB, the database is stored on S3 and read in on first launch.
+of 256MB, the database is stored on S3 and copied in the first time the function
+is executed.
 
-Create an SQLite database using the data and copy it to `./aws/data/data.sqlite`.
+Create an SQLite database using `./data` and copy it to `./aws/data/data.sqlite`.
 
 [Set up Serverless][5], `cd` into `./aws`, and then run `serverless deploy`.
 You should get some output in your terminal that includes an endpoint URL.
 Once you have tested, use `serverless deploy --stage prod`.
 
-The first call to the endpoint will take around 7.5 seconds due to the cold
+The first call to the endpoint will take around 5 seconds due to the cold
 start. Subsequent requests will be well sub 100ms, until the Lambda is left
 idle long enough that AWS times it out. You will want to use a warmer to
 prevent cold starts for end-users.

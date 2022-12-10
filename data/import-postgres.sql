@@ -18,8 +18,8 @@ CREATE TABLE place (
     admin INTEGER,
     country CHAR(2),
     sort INTEGER,
-    latitude DECIMAL(8,3),
-    longitude DECIMAL(8,3)
+    latitude DECIMAL(6,3),
+    longitude DECIMAL(6,3)
 );
 COPY place (name, admin, country, sort, latitude, longitude) FROM '/tmp/place.csv' DELIMITERS ',' CSV HEADER;
 CREATE INDEX idx_latlon ON place(latitude,longitude);
