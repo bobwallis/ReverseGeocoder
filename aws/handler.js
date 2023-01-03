@@ -105,6 +105,18 @@ const geocode = async ( event ) => {
           p.name LIKE :qLike2
           ${((prefer_country === 'null')? '' : 'AND p.country = :prefer_country' )}
         ORDER BY p.sort DESC
+        LIMIT 10)
+        UNION ALL
+        SELECT * FROM (SELECT
+          p.name AS name,
+          a.name AS admin,
+          p.country AS country,
+          p.latitude AS latitude,
+          p.longitude AS longitude
+        FROM place p LEFT JOIN admin a ON a.id = p.admin
+        WHERE
+          p.name LIKE :qLike1
+        ORDER BY p.sort DESC
         LIMIT 10);`
       );
       result = sql.all( (prefer_country === 'null')? { qLike1, qLike2 } : { qLike1, qLike2, prefer_country } );
