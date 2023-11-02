@@ -1,7 +1,7 @@
 # Geocoding Tools
 
 This contains a few simple geolocation-related tools designed for self-
-hosting that operates at village-level detail. (i.e. not suitable for
+hosting that operate at village-level detail. (i.e. not suitable for
 identifying specific addresses / buildings).
 
 There is:
