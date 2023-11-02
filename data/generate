@@ -53,7 +53,7 @@ echo -e "\033[1m\nImporting IP address location data...\033[0m"
     tail -n +2 "$d/GeoLite2-Country-Blocks-IPv4.csv" | \
     # Convert CIDR into start and end IPs, add the geoname_id to the end
     cut -f 1,2 --delimiter="," --output-delimiter="," | \
-    awk -F'[./,]' -v RS='[\n]' '{printf "%d%s%d%s%d%s", (($1*256+$2)*256+$3)*256+$4 + 1, "|", (($1*256+$2)*256+$3)*256+$4 + 2^(32-$5)-2, "|", $6, RT}'
+    gawk -F'[./,]' -v RS='[\n]' '{printf "%d%s%d%s%d%s", (($1*256+$2)*256+$3)*256+$4 + 1, "|", (($1*256+$2)*256+$3)*256+$4 + 2^(32-$5)-2, "|", $6, RT}'
 # Then import it
 } | sqlite3 -csv  -separator "|" "$d/geolite2.sqlite" ".import /dev/stdin ips"
 

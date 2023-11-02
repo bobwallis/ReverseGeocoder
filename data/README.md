@@ -4,7 +4,7 @@ The script in this folder processes GeoNames and GEOLite2 data into the formats
 used by the lookup code.
 
 * Make sure you have the following installed: `bash`, `curl`, `unzip`, `cut`,
-  `sed`, `sqlite3`, `awk`.
+  `sed`, `sqlite3`, `gawk`.
 
 * Copy `./.env.dist` to `./.env` and add in a key to download GeoLite2.
 
