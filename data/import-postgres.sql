@@ -34,3 +34,12 @@ CREATE TABLE ip (
 );
 COPY ip (network_start, network_end, country) FROM '/tmp/ip.csv' DELIMITERS ',' CSV HEADER;
 CREATE INDEX idx_netstart ON ip(network_start,network_end);
+
+DROP TABLE IF EXISTS ipv6;
+CREATE TABLE ipv6 (
+    network_start TEXT,
+    network_end TEXT,
+    country CHAR(2)
+);
+COPY ipv6 (network_start, network_end, country) FROM '/tmp/ipv6.csv' DELIMITERS ',' CSV HEADER;
+CREATE INDEX idx_netstart_ipv6 ON ipv6(network_start,network_end);

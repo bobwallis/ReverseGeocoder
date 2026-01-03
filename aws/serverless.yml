@@ -29,7 +29,7 @@ resources:
 functions:
   geocode:
     handler: handler.geocode
-    ephemeralStorageSize: 750
+    ephemeralStorageSize: 1024
     environment:
       BUCKET_NAME: !Ref DataBucket
     events:

@@ -11,7 +11,7 @@ const initializeDb = async () => {
   try {
     if (!process.env.BUCKET_NAME) {
       // Local testing: use existing data/data.sqlite
-      db = new Database('../data/data.sqlite', { readonly: true });
+      db = new Database('./data/data.sqlite', { readonly: true });
       return db;
     }
 
@@ -38,13 +38,30 @@ const initializeDb = async () => {
 
 const isValidIpAddress = (ip) => {
   const ipv4Regex = /^(\d{1,3}\.){3}\d{1,3}$/;
-  if (!ipv4Regex.test(ip)) return false;
-  const parts = ip.split('.');
-  return parts.every(part => parseInt(part) >= 0 && parseInt(part) <= 255);
+  const ipv6Regex = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/;
+  if (ipv4Regex.test(ip)) {
+    const parts = ip.split('.');
+    return parts.every(part => parseInt(part) >= 0 && parseInt(part) <= 255);
+  }
+  return ipv6Regex.test(ip);
 };
 
 const isValidCountryCode = (country) => {
   return /^[A-Z]{2}$/.test(country);
+};
+
+const expandIPv6 = (ip) => {
+  if (ip.includes('::')) {
+    const [left, right] = ip.split('::');
+    const leftParts = left ? left.split(':') : [];
+    const rightParts = right ? right.split(':') : [];
+    const missing = 8 - leftParts.length - rightParts.length;
+    const middle = new Array(missing).fill('0000');
+    const parts = [...leftParts, ...middle, ...rightParts];
+    return parts.map(p => p.padStart(4, '0')).join(':');
+  } else {
+    return ip.split(':').map(p => p.padStart(4, '0')).join(':');
+  }
 };
 
 // Handler function
@@ -214,18 +231,32 @@ const geocode = async (event) => {
         }
 
         try {
-          const lookupIPDecimal = ip.split('.').reduce((ipInt, octet) =>
-            (ipInt << 8) + parseInt(octet, 10) >>> 0, 0);
+          const isIPv6 = /^(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))$/.test(ip);
+          let sql, params;
+          if (isIPv6) {
+            const lookupIPExpanded = expandIPv6(ip);
+            sql = db.prepare(`
+              SELECT i.country
+              FROM ipv6 i
+              WHERE i.network_start <= :lookupIPExpanded
+              AND i.network_end >= :lookupIPExpanded
+              LIMIT 1
+            `);
+            params = { lookupIPExpanded };
+          } else {
+            const lookupIPDecimal = ip.split('.').reduce((ipInt, octet) =>
+              (ipInt << 8) + parseInt(octet, 10) >>> 0, 0);
+            sql = db.prepare(`
+              SELECT i.country
+              FROM ip i
+              WHERE i.network_start <= :lookupIPDecimal
+              AND i.network_end >= :lookupIPDecimal
+              LIMIT 1
+            `);
+            params = { lookupIPDecimal };
+          }
 
-          const sql = db.prepare(`
-            SELECT i.country
-            FROM ip i
-            WHERE i.network_start <= :lookupIPDecimal
-            AND i.network_end >= :lookupIPDecimal
-            LIMIT 1
-          `);
-
-          const result = sql.all({ lookupIPDecimal });
+          const result = sql.all(params);
 
           return {
             statusCode: 200,

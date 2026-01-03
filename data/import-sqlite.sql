@@ -32,4 +32,13 @@ CREATE TABLE ip (
 .import --csv --skip 1 ip.csv ip
 CREATE INDEX idx_network ON ip(network_start,network_end);
 
+DROP TABLE IF EXISTS ipv6;
+CREATE TABLE ipv6 (
+    network_start TEXT,
+    network_end TEXT,
+    country TEXT
+);
+.import --csv --skip 1 ipv6.csv ipv6
+CREATE INDEX idx_network_ipv6 ON ipv6(network_start,network_end);
+
 VACUUM;

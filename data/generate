@@ -57,6 +57,31 @@ echo -e "\033[1m\nImporting IP address location data...\033[0m"
 # Then import it
 } | sqlite3 -csv  -separator "|" "$d/geolite2.sqlite" ".import /dev/stdin ips"
 
+echo -e "\033[1m\nImporting IPv6 address location data...\033[0m"
+{
+    echo -e "network_start|network_end|geoname_id"
+    tail -n +2 "$d/GeoLite2-Country-Blocks-IPv6.csv" | \
+    cut -f 1,2 --delimiter="," --output-delimiter="," | \
+    python3 -c "
+import sys
+import ipaddress
+for line in sys.stdin:
+    parts = line.strip().split(',')
+    if len(parts) < 2: continue
+    network = parts[0]
+    geoname_id = parts[1]
+    try:
+        net = ipaddress.ip_network(network, strict=False)
+        start = net.network_address
+        end = net.broadcast_address
+        def expand(ip):
+            return ':'.join(f'{ip.packed[i*2] << 8 | ip.packed[i*2+1]:04x}' for i in range(8))
+        print(f'{expand(start)}|{expand(end)}|{geoname_id}')
+    except:
+        pass
+"
+} | sqlite3 -csv -separator "|" "$d/geolite2.sqlite" ".import /dev/stdin ips_ipv6"
+
 # Import country codes
 echo -e "\033[1m\nImporting country codes...\033[0m"
 # Generate an import file from the downloaded data
@@ -83,6 +108,20 @@ SELECT i.network_start AS network_start,
  LEFT JOIN locations l on i.geoname_id = l.geoname_id;
 END_COMMANDS
 } > "$d/ip.csv"
+
+# Export IPv6 data from the temporary SQLite table into a CSV file
+echo -e "\033[1m\nExporting IPv6 combined data...\033[0m"
+{
+    sqlite3 "$d/geolite2.sqlite" <<END_COMMANDS
+.headers on
+.mode csv
+SELECT i.network_start AS network_start,
+       i.network_end AS network_end,
+       l.country_iso_code AS country
+ FROM ips_ipv6 i
+ LEFT JOIN locations l on i.geoname_id = l.geoname_id;
+END_COMMANDS
+} > "$d/ipv6.csv"
 
 
 # Import admin 1 codes into a temporary SQLite database

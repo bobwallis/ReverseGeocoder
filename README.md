@@ -57,6 +57,13 @@ following columns:
 | network_end   | integer   | Decimal IP address ending a range           |
 | country       | char(2)   | ISO-3166 2-letter country code of the range |
 
+### `ipv6` table
+| Column        | Data Type | Description                                 |
+|---------------|-----------|---------------------------------------------|
+| network_start | text      | Expanded IPv6 address starting a range      |
+| network_end   | text      | Expanded IPv6 address ending a range        |
+| country       | char(2)   | ISO-3166 2-letter country code of the range |
+
 You can get this from any source you like. In the `./data` folder there are
 scripts that help with creating such a table using [GeoLite2 by Maxmind][6].
 
@@ -75,6 +82,7 @@ are using) at the top so the script can connect to the data you just created.
 
 Upload to your PHP server of choice, and access like this:
 `https://example.com/ip2country.php?ip=1.0.0.1`
+`https://example.com/ip2country.php?ip=2001:4860:4860::8888`
 `https://example.com/reverse_geocode.php?lat=51.7546&lon=-1.2588`
 `https://example.com/geocode.php?q=oxfo&prefer_country=GB`
 
