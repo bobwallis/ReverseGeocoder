@@ -9,6 +9,12 @@ const initializeDb = async () => {
   if (db) return db;
 
   try {
+    if (!process.env.BUCKET_NAME) {
+      // Local testing: use existing data/data.sqlite
+      db = new Database('../data/data.sqlite', { readonly: true });
+      return db;
+    }
+
     const client = new S3Client();
     const item = await client.send(new GetObjectCommand({
       Bucket: process.env.BUCKET_NAME,

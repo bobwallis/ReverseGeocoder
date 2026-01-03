@@ -1,13 +1,13 @@
 {
   "type": "module",
   "engines": {
-    "node": ">=22.0.0 <23.0.0"
+    "node": ">=24.0.0 <25.0.0"
   },
   "devDependencies": {
     "serverless-s3-sync": "^3.4.0"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.796.0",
-    "better-sqlite3": "^11.9.1"
+    "better-sqlite3": "^12.5.0"
   }
 }

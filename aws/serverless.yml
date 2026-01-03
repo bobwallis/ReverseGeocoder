@@ -5,7 +5,7 @@ frameworkVersion: '4'
 provider:
   name: aws
   deploymentMethod: direct
-  runtime: nodejs22.x
+  runtime: nodejs24.x
   memorySize: 2048
   timeout: 20
   iam:
