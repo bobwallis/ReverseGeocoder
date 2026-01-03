@@ -18,4 +18,5 @@ rm -f "$d/admin1CodesASCII.txt" \
       "$d/GeoLite2-Country-CSV.zip" \
       "$d/geolite2.sqlite" \
       "$d/place.csv" \
+      "$d/admin.csv" \
       "$d/ip.csv"
