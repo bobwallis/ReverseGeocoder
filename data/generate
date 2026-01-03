@@ -36,7 +36,7 @@ if [[ -f "$d/GeoLite2-Country-CSV.zip" ]]; then
     echo -e "\033[1m\nGeoLite2-Country data already downloaded\033[0m"
 else
     echo -e "\033[1m\nDownloading GeoLite2-Country data...\033[0m"
-    curl "https://download.maxmind.com/app/geoip_download?edition_id=GeoLite2-Country-CSV&license_key=$GEOLITE2_LICENSE_KEY&suffix=zip" --output "$d/GeoLite2-Country-CSV.zip"
+    curl -L -u $GEOLITE2_ACCOUNT_ID:$GEOLITE2_LICENSE_KEY 'https://download.maxmind.com/geoip/databases/GeoLite2-Country-CSV/download?suffix=zip' --output "$d/GeoLite2-Country-CSV.zip"
     echo -e "\n\033[1mExtracting data\033[0m"
     unzip -ju "$d/GeoLite2-Country-CSV" "*/GeoLite2-Country-Blocks-IPv4.csv" "*/GeoLite2-Country-Blocks-IPv6.csv" "*/GeoLite2-Country-Locations-en.csv"
 fi
